@@ -1,212 +1,194 @@
 import sqlite3
 
-def conectar_banco():
-    conn = sqlite3.connect('produtos.db')
+def connect_database():
+    conn = sqlite3.connect('products.db')
     return conn
 
-def criar_tabela():
-    conn = conectar_banco()
+def create_table():
+    conn = connect_database()
     try:
         cursor = conn.cursor()
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS produtos (
+        CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            preco REAL NOT NULL,
-            quantidade INTEGER NOT NULL
+            name TEXT NOT NULL,
+            price REAL NOT NULL,
+            quantity INTEGER NOT NULL
         )
         ''')
         conn.commit()
     finally:
         conn.close()
 
-def autenticar_manager():
-    username = input("digite o nome de usuário: ").strip()
-    password = input("digite a senha: ").strip()
+def authenticate_manager():
+    username = input("Enter username: ").strip()
+    password = input("Enter password: ").strip()
     
     if username == "admin" and password == "admin":
         return True
     else:
-        print("credenciais inválidas. acesso negado.")
+        print("Invalid credentials. Access denied.")
         return False
 
-def consultar_produto():
-    conn = conectar_banco()
+def search_product():
+    conn = connect_database()
     try:
         cursor = conn.cursor()
-        consulta = input("digite o id ou o nome do item que deseja consultar (ou 'sair' para cancelar): ").strip()
+        query = input("Enter the product ID or name (or 'exit' to cancel): ").strip()
 
-        if consulta.lower() == "sair":
-            print("consulta cancelada.")
+        if query.lower() == "exit":
+            print("Search canceled.")
             return None
 
-        if consulta.isdigit():
-            cursor.execute("SELECT * FROM produtos WHERE id = ?", (int(consulta),))
+        if query.isdigit():
+            cursor.execute("SELECT * FROM products WHERE id = ?", (int(query),))
         else:
-            cursor.execute("SELECT * FROM produtos WHERE nome LIKE ? COLLATE NOCASE", (f"%{consulta}%",))
+            cursor.execute("SELECT * FROM products WHERE name LIKE ? COLLATE NOCASE", (f"%{query}%",))
 
-        produto = cursor.fetchone()
+        product = cursor.fetchone()
 
-        if produto:
-            print("\nproduto encontrado:")
-            print(f"id: {produto[0]}")
-            print(f"nome: {produto[1]}")
-            print(f"preço: R${produto[2]:.2f}")
-            print(f"quantidade: {produto[3]}")
-            return produto
+        if product:
+            print("\nProduct found:")
+            print(f"ID: {product[0]}")
+            print(f"Name: {product[1]}")
+            print(f"Price: ${product[2]:.2f}")
+            print(f"Quantity: {product[3]}")
+            return product
         else:
-            print("produto não encontrado.")
+            print("Product not found.")
             return None
     finally:
         conn.close()
 
-def cadastrar_produto():
+def register_product():
     try:
-        nome = input("digite o nome do novo produto:\n-> ").strip()
-        preco = float(input("digite o preço do novo produto:\n-> "))
-        quantidade = int(input("digite a quantidade do novo produto:\n-> "))
+        name = input("Enter the new product name:\n-> ").strip()
+        price = float(input("Enter the new product price:\n-> "))
+        quantity = int(input("Enter the new product quantity:\n-> "))
 
-        conn = conectar_banco()
+        conn = connect_database()
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO produtos (nome, preco, quantidade) VALUES (?, ?, ?)", (nome, preco, quantidade))
+            cursor.execute("INSERT INTO products (name, price, quantity) VALUES (?, ?, ?)", (name, price, quantity))
             conn.commit()
-            print("produto cadastrado com sucesso!")
+            print("Product successfully registered!")
         finally:
             conn.close()
     except ValueError as e:
-        print(f"erro: entrada inválida. certifique-se de digitar números para preço e quantidade. detalhes: {e}")
+        print(f"Error: Invalid input. Ensure you enter numbers for price and quantity. Details: {e}")
 
-def adicionar_quantidade():
-    produto = consultar_produto()
-    if produto:
+def add_quantity():
+    product = search_product()
+    if product:
         try:
-            quantidade = int(input("digite a quantidade a ser adicionada:\n-> "))
-            if quantidade > 0:
-                conn = conectar_banco()
+            quantity = int(input("Enter the quantity to be added:\n-> "))
+            if quantity > 0:
+                conn = connect_database()
                 try:
                     cursor = conn.cursor()
-                    cursor.execute("UPDATE produtos SET quantidade = quantidade + ? WHERE id = ?", (quantidade, produto[0]))
+                    cursor.execute("UPDATE products SET quantity = quantity + ? WHERE id = ?", (quantity, product[0]))
                     conn.commit()
-
-                    # buscar a quantidade atualizada
-                    cursor.execute("SELECT quantidade FROM produtos WHERE id = ?", (produto[0],))
-                    nova_quantidade = cursor.fetchone()[0]
-
-                    print(f"quantidade atualizada com sucesso! nova quantidade: {nova_quantidade}")
+                    cursor.execute("SELECT quantity FROM products WHERE id = ?", (product[0],))
+                    new_quantity = cursor.fetchone()[0]
+                    print(f"Quantity successfully updated! New quantity: {new_quantity}")
                 finally:
                     conn.close()
             else:
-                print("erro: a quantidade deve ser maior que zero.")
+                print("Error: Quantity must be greater than zero.")
         except ValueError:
-            print("erro: entrada inválida. certifique-se de digitar um número inteiro.")
+            print("Error: Invalid input. Ensure you enter an integer.")
 
-def caixa():
-    carrinho = []
-    total_compra = 0.0
-
+def checkout():
+    cart = []
     while True:
-        print("\n--- modo caixa ---")
-        print("1 - adicionar produto ao carrinho")
-        print("2 - visualizar carrinho")
-        print("3 - finalizar compra")
-        print("4 - cancelar compra")
-        opcao = input("escolha uma opção: ").strip()
+        print("\n--- Checkout Mode ---")
+        print("1 - Add product to cart")
+        print("2 - View cart")
+        print("3 - Finalize purchase")
+        print("4 - Cancel purchase")
+        option = input("Choose an option: ").strip()
 
-        if opcao == "1":
-            produto = consultar_produto()
-            if produto is not None:
+        if option == "1":
+            product = search_product()
+            if product is not None:
                 try:
-                    quantidade = int(input(f"digite a quantidade de '{produto[1]}' que deseja comprar: "))
-                    if quantidade <= produto[3]:
-                        carrinho.append({
-                            "nome": produto[1],
-                            "preco": produto[2],
-                            "quantidade": quantidade
-                        })
-
-                        conn = conectar_banco()
+                    quantity = int(input(f"Enter the quantity of '{product[1]}' to purchase: "))
+                    if quantity <= product[3]:
+                        cart.append({"name": product[1], "price": product[2], "quantity": quantity})
+                        conn = connect_database()
                         try:
                             cursor = conn.cursor()
-                            cursor.execute("UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?", (quantidade, produto[0]))
+                            cursor.execute("UPDATE products SET quantity = quantity - ? WHERE id = ?", (quantity, product[0]))
                             conn.commit()
                         finally:
                             conn.close()
-
-                        print(f"{quantidade} unidades de '{produto[1]}' adicionadas ao carrinho.")
+                        print(f"{quantity} units of '{product[1]}' added to the cart.")
                     else:
-                        print(f"estoque insuficiente. há apenas {produto[3]} unidades disponíveis.")
+                        print(f"Insufficient stock. Only {product[3]} units available.")
                 except ValueError:
-                    print("erro: entrada inválida. certifique-se de digitar um número inteiro.")
+                    print("Error: Invalid input. Ensure you enter an integer.")
 
-        elif opcao == "2":
-            if not carrinho:
-                print("o carrinho está vazio.")
+        elif option == "2":
+            if not cart:
+                print("The cart is empty.")
             else:
-                print("\n--- carrinho de compras ---")
-                for item in carrinho:
-                    print(f"{item['quantidade']} x {item['nome']} - R${item['preco']:.2f} cada")
+                print("\n--- Shopping Cart ---")
+                for item in cart:
+                    print(f"{item['quantity']} x {item['name']} - ${item['price']:.2f} each")
                 print("--------------------------")
 
-        elif opcao == "3":
-            if not carrinho:
-                print("o carrinho está vazio. nada para finalizar.")
+        elif option == "3":
+            if not cart:
+                print("The cart is empty. Nothing to finalize.")
             else:
-                print("\n--- finalizando compra ---")
-                total_compra = sum(item["preco"] * item["quantidade"] for item in carrinho)
-                print(f"total da compra: R${total_compra:.2f}")
-                print("compra finalizada com sucesso!")
-                carrinho.clear()
+                print("\n--- Finalizing Purchase ---")
+                total = sum(item["price"] * item["quantity"] for item in cart)
+                print(f"Total: ${total:.2f}")
+                print("Purchase successfully completed!")
+                cart.clear()
                 break
 
-        elif opcao == "4":
-            print("compra cancelada. todos os itens foram removidos do carrinho.")
-            carrinho.clear()
+        elif option == "4":
+            print("Purchase canceled. All items removed from cart.")
+            cart.clear()
             break
 
         else:
-            print("opção inválida. tente novamente.")
+            print("Invalid option. Try again.")
 
-def menu(cargo):
+def menu(role):
     while True:
-        print("\nescolha uma opção: ")
-        if cargo == "manager":
-            print("1 - consulta")
-            print("2 - caixa")
-            print("3 - cadastro")
-            print("4 - adicionar quantidade")
-        elif cargo == "funcionario":
-            print("1 - consulta")
-            print("2 - caixa")
+        print("\nChoose an option:")
+        if role == "manager":
+            print("1 - Search Product")
+            print("2 - Checkout")
+            print("3 - Register Product")
+            print("4 - Add Quantity")
+        elif role == "employee":
+            print("1 - Search Product")
+            print("2 - Checkout")
         
-        opcao = input("digite o número da opção desejada: ").strip()
+        option = input("Enter the option number: ").strip()
         
-        if opcao == "1":
-            consultar_produto()
-        elif opcao == "2":
-            caixa()
-        elif opcao == "3":
-            if cargo == "manager":
-                if autenticar_manager():
-                    cadastrar_produto()
-            else:
-                print("acesso negado: você não tem permissão para cadastrar produtos.")
-        elif opcao == "4":
-            if cargo == "manager":
-                if autenticar_manager():
-                    adicionar_quantidade()
-            else:
-                print("acesso negado: você não tem permissão para adicionar quantidade.")
+        if option == "1":
+            search_product()
+        elif option == "2":
+            checkout()
+        elif option == "3" and role == "manager":
+            if authenticate_manager():
+                register_product()
+        elif option == "4" and role == "manager":
+            if authenticate_manager():
+                add_quantity()
         else:
-            print("opção inválida. tente novamente.")
+            print("Invalid option or insufficient permission. Try again.")
 
-# inicialização do sistema
 if __name__ == "__main__":
-    criar_tabela()
+    create_table()
     while True:
-        cargo_usuario = input("digite seu cargo (manager/funcionario): ").lower()
-        if cargo_usuario in ["manager", "funcionario"]:
+        user_role = input("Enter your role (manager/employee): ").lower()
+        if user_role in ["manager", "employee"]:
             break
         else:
-            print("cargo inválido. digite 'manager' ou 'funcionario'.")
-    menu(cargo_usuario)
+            print("Invalid role. Enter 'manager' or 'employee'.")
+    menu(user_role)
