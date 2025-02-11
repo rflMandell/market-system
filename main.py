@@ -1,8 +1,26 @@
 produtos = [
     {"ID": 1, "nome": "Arroz", "preco": 10.50, "quantidade": 50},
     {"ID": 2, "nome": "Feijão", "preco": 8.00, "quantidade": 30},
-    {"ID": 3, "nome": "Macarrão", "preco": 4.50, "quantidade": 20}
+    {"ID": 3, "nome": "Macarrão", "preco": 4.50, "quantidade": 20},
+    {"ID": 4, "nome": "Açúcar", "preco": 5.20, "quantidade": 40},
+    {"ID": 5, "nome": "Sal", "preco": 2.00, "quantidade": 60},
+    {"ID": 6, "nome": "Óleo de Soja", "preco": 9.80, "quantidade": 25},
+    {"ID": 7, "nome": "Leite", "preco": 6.30, "quantidade": 35},
+    {"ID": 8, "nome": "Café", "preco": 12.00, "quantidade": 15},
+    {"ID": 9, "nome": "Farinha de Trigo", "preco": 4.80, "quantidade": 22},
+    {"ID": 10, "nome": "Margarina", "preco": 3.90, "quantidade": 18},
+    {"ID": 11, "nome": "Detergente", "preco": 2.50, "quantidade": 50},
+    {"ID": 12, "nome": "Sabão em Pó", "preco": 15.00, "quantidade": 10},
+    {"ID": 13, "nome": "Papel Higiênico", "preco": 11.50, "quantidade": 12},
+    {"ID": 14, "nome": "Shampoo", "preco": 14.00, "quantidade": 8},
+    {"ID": 15, "nome": "Creme Dental", "preco": 6.90, "quantidade": 20},
+    {"ID": 16, "nome": "Molho de Tomate", "preco": 3.40, "quantidade": 25},
+    {"ID": 17, "nome": "Biscoito", "preco": 7.20, "quantidade": 30},
+    {"ID": 18, "nome": "Refrigerante", "preco": 8.50, "quantidade": 40},
+    {"ID": 19, "nome": "Queijo Mussarela", "preco": 29.90, "quantidade": 15},
+    {"ID": 20, "nome": "Presunto", "preco": 22.50, "quantidade": 18}
 ]
+
 
 manager_login = {
     "username": "admin",
