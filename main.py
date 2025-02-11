@@ -1,103 +1,99 @@
-produtos = [
-    {"ID": 1, "nome": "Arroz", "preco": 10.50, "quantidade": 50},
-    {"ID": 2, "nome": "Feijão", "preco": 8.00, "quantidade": 30},
-    {"ID": 3, "nome": "Macarrão", "preco": 4.50, "quantidade": 20},
-    {"ID": 4, "nome": "Açúcar", "preco": 5.20, "quantidade": 40},
-    {"ID": 5, "nome": "Sal", "preco": 2.00, "quantidade": 60},
-    {"ID": 6, "nome": "Óleo de Soja", "preco": 9.80, "quantidade": 25},
-    {"ID": 7, "nome": "Leite", "preco": 6.30, "quantidade": 35},
-    {"ID": 8, "nome": "Café", "preco": 12.00, "quantidade": 15},
-    {"ID": 9, "nome": "Farinha de Trigo", "preco": 4.80, "quantidade": 22},
-    {"ID": 10, "nome": "Margarina", "preco": 3.90, "quantidade": 18},
-    {"ID": 11, "nome": "Detergente", "preco": 2.50, "quantidade": 50},
-    {"ID": 12, "nome": "Sabão em Pó", "preco": 15.00, "quantidade": 10},
-    {"ID": 13, "nome": "Papel Higiênico", "preco": 11.50, "quantidade": 12},
-    {"ID": 14, "nome": "Shampoo", "preco": 14.00, "quantidade": 8},
-    {"ID": 15, "nome": "Creme Dental", "preco": 6.90, "quantidade": 20},
-    {"ID": 16, "nome": "Molho de Tomate", "preco": 3.40, "quantidade": 25},
-    {"ID": 17, "nome": "Biscoito", "preco": 7.20, "quantidade": 30},
-    {"ID": 18, "nome": "Refrigerante", "preco": 8.50, "quantidade": 40},
-    {"ID": 19, "nome": "Queijo Mussarela", "preco": 29.90, "quantidade": 15},
-    {"ID": 20, "nome": "Presunto", "preco": 22.50, "quantidade": 18}
-]
+import sqlite3
 
-manager_login = {
-    "username": "admin",
-    "password": "admin"
-}
+def conectar_banco():
+    conn = sqlite3.connect('produtos.db')
+    return conn
+
+def criar_tabela():
+    conn = conectar_banco()
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS produtos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        preco REAL NOT NULL,
+        quantidade INTEGER NOT NULL
+    )
+    ''')
+    conn.commit()
+    conn.close()
 
 def autenticar_manager():
     username = input("Digite o nome de usuário: ")
     password = input("Digite a senha: ")
     
-    if username == manager_login["username"] and password == manager_login["password"]:
+    if username == "admin" and password == "admin":
         return True
     else:
         print("Credenciais inválidas. Acesso negado.")
         return False
 
-def consultar_produto(produtos):
-    while True:
-        print("\nDigite o ID ou o nome do item que deseja consultar (ou digite 'sair' para cancelar):")
-        consulta = input().strip()
+def consultar_produto():
+    conn = conectar_banco()
+    cursor = conn.cursor()
 
-        if consulta.lower() == "sair":
-            print("Consulta cancelada.")
-            return None
+    consulta = input("Digite o ID ou o nome do item que deseja consultar (ou 'sair' para cancelar): ").strip()
 
-        produto_encontrado = None
+    if consulta.lower() == "sair":
+        print("Consulta cancelada.")
+        return None
 
-        if consulta.isdigit():
-            consulta = int(consulta)
-            produto_encontrado = next((produto for produto in produtos if produto["ID"] == consulta), None)
-        else:
-            produto_encontrado = next((produto for produto in produtos if produto["nome"].lower() == consulta.lower()), None)
+    if consulta.isdigit():
+        cursor.execute("SELECT * FROM produtos WHERE id = ?", (int(consulta),))
+    else:
+        cursor.execute("SELECT * FROM produtos WHERE nome LIKE ?", (f"%{consulta}%",))
 
-        if produto_encontrado:
-            print(f"\nProduto encontrado:")
-            print(f"Nome: {produto_encontrado['nome']}")
-            print(f"Preço: R${produto_encontrado['preco']:.2f}")
-            print(f"Quantidade: {produto_encontrado['quantidade']}")
-            return produto_encontrado
-        else:
-            print("Produto não encontrado. Tente novamente ou digite 'sair' para cancelar.")
+    produto = cursor.fetchone()
+    conn.close()
 
-def cadastrar_produto(produtos):
+    if produto:
+        print(f"\nProduto encontrado:")
+        print(f"ID: {produto[0]}")
+        print(f"Nome: {produto[1]}")
+        print(f"Preço: R${produto[2]:.2f}")
+        print(f"Quantidade: {produto[3]}")
+        return produto
+    else:
+        print("Produto não encontrado.")
+        return None
+
+def cadastrar_produto():
     try:
-        novo_id = int(input("Digite o ID do novo produto:\n-> "))
-        novo_nome = input("Digite o nome do novo produto:\n-> ").strip()
-        novo_preco = float(input("Digite o preco do novo produto:\n-> "))
-        novo_quantidade = int(input("Digite a quantidade do novo produto:\n-> "))
-        
-        if any(produto["ID"] == novo_id for produto in produtos):
-            print("Erro: ID já existe.")
-            return
+        nome = input("Digite o nome do novo produto:\n-> ").strip()
+        preco = float(input("Digite o preço do novo produto:\n-> "))
+        quantidade = int(input("Digite a quantidade do novo produto:\n-> "))
 
-        novo_produto = {
-            "ID": novo_id,
-            "nome": novo_nome,
-            "preco": novo_preco,
-            "quantidade": novo_quantidade
-        }
-        produtos.append(novo_produto)
+        conn = conectar_banco()
+        cursor = conn.cursor()
+
+        cursor.execute("INSERT INTO produtos (nome, preco, quantidade) VALUES (?, ?, ?)", (nome, preco, quantidade))
+        conn.commit()
+        conn.close()
+
         print("Produto cadastrado com sucesso!")
     except ValueError:
-        print("Erro: Entrada inválida. Certifique-se de digitar números para ID, preço e quantidade.")
+        print("Erro: Entrada inválida. Certifique-se de digitar números para preço e quantidade.")
 
-def adicionar_quantidade(produtos):
-    produto = consultar_produto(produtos)
+def adicionar_quantidade():
+    produto = consultar_produto()
     if produto:
         try:
             quantidade = int(input("Digite a quantidade a ser adicionada:\n-> "))
             if quantidade > 0:
-                produto["quantidade"] += quantidade
-                print(f"Quantidade atualizada com sucesso! Nova quantidade: {produto['quantidade']}")
+                conn = conectar_banco()
+                cursor = conn.cursor()
+
+                cursor.execute("UPDATE produtos SET quantidade = quantidade + ? WHERE id = ?", (quantidade, produto[0]))
+                conn.commit()
+                conn.close()
+
+                print(f"Quantidade atualizada com sucesso! Nova quantidade: {produto[3] + quantidade}")
             else:
                 print("Erro: A quantidade deve ser maior que zero.")
         except ValueError:
             print("Erro: Entrada inválida. Certifique-se de digitar um número inteiro.")
 
-def caixa(produtos):
+def caixa():
     carrinho = []
     total_compra = 0.0
 
@@ -110,20 +106,26 @@ def caixa(produtos):
         opcao = input("Escolha uma opção: ").strip()
 
         if opcao == "1":
-            produto = consultar_produto(produtos)
+            produto = consultar_produto()
             if produto:
                 try:
-                    quantidade = int(input(f"Digite a quantidade de '{produto['nome']}' que sera comprada: "))
-                    if quantidade <= produto["quantidade"]:
+                    quantidade = int(input(f"Digite a quantidade de '{produto[1]}' que deseja comprar: "))
+                    if quantidade <= produto[3]:
                         carrinho.append({
-                            "nome": produto["nome"],
-                            "preco": produto["preco"],
+                            "nome": produto[1],
+                            "preco": produto[2],
                             "quantidade": quantidade
                         })
-                        produto["quantidade"] -= quantidade
-                        print(f"{quantidade} unidades de '{produto['nome']}' adicionadas ao carrinho.")
+
+                        conn = conectar_banco()
+                        cursor = conn.cursor()
+                        cursor.execute("UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?", (quantidade, produto[0]))
+                        conn.commit()
+                        conn.close()
+
+                        print(f"{quantidade} unidades de '{produto[1]}' adicionadas ao carrinho.")
                     else:
-                        print(f"Estoque insuficiente. Há apenas {produto['quantidade']} unidades disponíveis.")
+                        print(f"Estoque insuficiente. Há apenas {produto[3]} unidades disponíveis.")
                 except ValueError:
                     print("Erro: Entrada inválida. Certifique-se de digitar um número inteiro.")
 
@@ -155,6 +157,7 @@ def caixa(produtos):
         else:
             print("Opção inválida. Tente novamente.")
 
+# Menu principal
 def menu(cargo):
     while True:
         print("\nEscolha uma opção: ")
@@ -170,23 +173,26 @@ def menu(cargo):
         opcao = input("Digite o número da opção desejada: ").strip()
         
         if opcao == "1":
-            consultar_produto(produtos)
+            consultar_produto()
         elif opcao == "2":
-            caixa(produtos)
+            caixa()
         elif opcao == "3":
             if cargo == "manager":
                 if autenticar_manager():
-                    cadastrar_produto(produtos)
+                    cadastrar_produto()
             else:
                 print("Acesso negado: Você não tem permissão para cadastrar produtos.")
         elif opcao == "4":
             if cargo == "manager":
                 if autenticar_manager():
-                    adicionar_quantidade(produtos)
+                    adicionar_quantidade()
             else:
                 print("Acesso negado: Você não tem permissão para adicionar quantidade.")
         else:
             print("Opção inválida. Tente novamente.")
 
-cargo_usuario = input("Digite seu cargo (manager/funcionario): ").lower()
-menu(cargo_usuario)
+# Inicialização do sistema vambora krl isso demorou mais do que devia mds do ceuaaaaaaaaaa
+if __name__ == "__main__":
+    criar_tabela()
+    cargo_usuario = input("Digite seu cargo (manager/funcionario): ").lower()
+    menu(cargo_usuario)
